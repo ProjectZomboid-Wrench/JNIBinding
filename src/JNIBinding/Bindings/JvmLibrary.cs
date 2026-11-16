@@ -15,6 +15,7 @@ namespace JNIBinding.Bindings;
 public sealed unsafe class JvmLibrary : IVMRef
 {
     private readonly string? _explicitPath;
+    private readonly string? _javaHome;
 
     private delegate* unmanaged<IntPtr*, IntPtr*, JvmInitArgs*, JniResult> _createJavaVM;
     private delegate* unmanaged<IntPtr*, int, int*, JniResult> _getCreatedJavaVMs;
@@ -24,6 +25,14 @@ public sealed unsafe class JvmLibrary : IVMRef
     {
         _explicitPath = libraryPath;
     }
+
+    private JvmLibrary(string? libraryPath, string javaHome) : this(libraryPath)
+    {
+        _javaHome = javaHome;
+    }
+
+    /// <summary>Resolves the library inside a specific Java home, e.g. the running JVM's <c>java.home</c>.</summary>
+    public static JvmLibrary ForJavaHome(string javaHome) => new(null, javaHome);
 
     public string VMLibraryName =>
         OperatingSystem.IsWindows() ? "jvm.dll" :
@@ -93,6 +102,13 @@ public sealed unsafe class JvmLibrary : IVMRef
             if (NativeLibrary.TryLoad(_explicitPath, out var h))
                 return (h, _explicitPath);
             throw new DllNotFoundException($"Unable to load JVM library from '{_explicitPath}'");
+        }
+
+        if (_javaHome is not null)
+        {
+            if (TryLoadFromJavaHome(_javaHome, tried, out var fromGiven))
+                return fromGiven;
+            throw new DllNotFoundException($"Unable to locate {VMLibraryName} under '{_javaHome}'. Tried: {string.Join(", ", tried)}");
         }
 
         var javaHome = Environment.GetEnvironmentVariable("JAVA_HOME");

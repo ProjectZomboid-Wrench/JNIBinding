@@ -35,6 +35,34 @@ public class JavaRuntime(JVM vm, JNIEnv env)
         return new JavaClass(_env, ref cls, className, this);
     }
 
+    /// <summary>
+    /// Loads a class through the system class loader. Use this instead of <see cref="FindClass"/> when entered
+    /// from FFM or other non-JNI paths, where FindClass resolves against a JDK-internal caller's loader.
+    /// </summary>
+    public unsafe JavaClass FindSystemClass(string className)
+    {
+        if (className.Contains("/"))
+            throw new ArgumentException("Use dot notation rather than JNI slashed notation");
+
+        var loaderCls = _env.FindClass("java/lang/ClassLoader");
+        var getSystemLoader = _env.GetStaticMethodId(loaderCls, "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
+        var loadClass = _env.GetMethodId(loaderCls, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+        var loader = _env.CallStaticObjectMethod(loaderCls, getSystemLoader, null);
+
+        var name = _env.AsJString(className);
+        _JValue* args = stackalloc _JValue[] { new _JValue((_JObject)name) };
+        var cls = _env.CallObjectMethodA(loader, loadClass, args).AsClass();
+        _env.CheckJavaExceptionAndThrow();
+
+        _env.DeleteLocalRef((_JObject)name);
+        _env.DeleteLocalRef(loader);
+        _env.DeleteLocalRef(loaderCls);
+        if (cls.IsNull)
+            throw new JNIClassNotFoundException(className);
+
+        return new JavaClass(_env, ref cls, className, this);
+    }
+
     public JavaRuntime ForCurrentThread() => new(VM, VM.GetOrAttachEnv());
 
     /// <summary>Creates the JVM, or joins the one already running in this process.</summary>

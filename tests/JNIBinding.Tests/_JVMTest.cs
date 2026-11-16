@@ -45,4 +45,19 @@ public class _JVMTest
 
         Assert.IsGreaterThanOrEqualTo(0x00010006, version);
     }
+
+    [TestMethod]
+    public void FindSystemClass_Loads_Classpath_Class()
+    {
+        var cls = _runtime.FindSystemClass("NativeTarget");
+
+        Assert.IsFalse(cls.Value.IsNull);
+    }
+
+    [TestMethod]
+    public void FindSystemClass_Unknown_Class_Throws_And_Clears_Exception()
+    {
+        Assert.ThrowsExactly<JavaThrowable>(() => _runtime.FindSystemClass("does.not.Exist"));
+        Assert.IsTrue(_runtime.Env.ExceptionOccurred().IsNull);
+    }
 }

@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using JNIBinding.Bindings.Native.Types;
+using JNIBinding.Exceptions;
 
 namespace JNIBinding;
 

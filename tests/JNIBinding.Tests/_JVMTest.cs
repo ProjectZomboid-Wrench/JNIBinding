@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using JetBrains.Annotations;
 using JNIBinding.Bindings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using JNIBinding.Exceptions;
 
 namespace JNIBinding.Tests;
 

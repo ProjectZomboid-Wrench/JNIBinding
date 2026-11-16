@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using JNIBinding.Exceptions;
 
 namespace JNIBinding.Tests;
 

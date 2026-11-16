@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using JNIBinding.Bindings.Native;
 using JNIBinding.Bindings.Native.Types;
+using JNIBinding.Exceptions;
 
 namespace JNIBinding;
 

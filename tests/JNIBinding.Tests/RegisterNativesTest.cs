@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using JNIBinding.Bindings.Native.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using JNIBinding.Exceptions;
 
 namespace JNIBinding.Tests;
 

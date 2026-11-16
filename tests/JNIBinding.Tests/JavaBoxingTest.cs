@@ -56,6 +56,18 @@ public unsafe class JavaBoxingTest
         Assert.AreEqual("null", JavaBoxing.ToJavaString(Env, _JObject.Null));
     }
 
+    [TestMethod]
+    public void IsSameObject_Compares_Referents_Not_References()
+    {
+        var builder = Env.NewObject("java/lang/StringBuilder", "()V");
+        var global = Env.NewGlobalRef(builder);
+        var other = Env.NewObject("java/lang/StringBuilder", "()V");
+
+        Assert.IsTrue(Env.IsSameObject(builder, global));
+        Assert.IsFalse(Env.IsSameObject(builder, other));
+        Env.DeleteGlobalRef(global);
+    }
+
     private void AssertUnboxes(object expected, _JObject obj)
     {
         Assert.IsTrue(JavaBoxing.TryUnbox(Env, obj, out var value));

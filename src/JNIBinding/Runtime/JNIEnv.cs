@@ -78,6 +78,9 @@ public unsafe class JNIEnv : IDisposable
     
     public bool IsInstanceOf(_JObject obj, _JClass cls) => Functions.IsInstanceOf(EnvHandle, obj, cls) != 0;
 
+    /// <summary>Java reference identity (<c>==</c>), comparing what two refs point to rather than the refs themselves.</summary>
+    public bool IsSameObject(_JObject a, _JObject b) => Functions.IsSameObject(EnvHandle, a, b) != 0;
+
     public _JClass GetObjectClass(_JObject obj) => new(Functions.GetObjectClass(EnvHandle, obj));
 
     public _JClass FindClass(string name)

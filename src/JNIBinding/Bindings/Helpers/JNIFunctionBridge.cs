@@ -290,6 +290,9 @@ public class JNIFunctionBridge(JNINativeInterface functions)
     [JNIFunctionBinding(nameof(JNINativeInterface_.IsSameObject))]
     public JNINativeInterface_.IsSameObject IsSameObject { get; init; }
 
+    [JNIFunctionBinding(nameof(JNINativeInterface_.IsInstanceOf))]
+    public JNINativeInterface_.IsInstanceOf IsInstanceOf { get; init; }
+
     [JNIFunctionBinding(nameof(JNINativeInterface_.MonitorEnter))]
     public JNINativeInterface_.MonitorEnter MonitorEnter { get; init; }
 

@@ -39,6 +39,20 @@ public unsafe class JNIEnv : IDisposable
     /// </summary>
     public static implicit operator IntPtr(JNIEnv env) => env.EnvHandle;
 
+    [ThreadStatic] private static JNIEnv? _threadCached;
+
+    /// <summary>
+    /// Returns a wrapper for a handle obtained on the calling thread, reusing the previous one when the handle is
+    /// unchanged. Prefer this to the constructor, which binds every JNI function and is expensive.
+    /// </summary>
+    public static JNIEnv ForHandle(_JNIEnv handle)
+    {
+        var cached = _threadCached;
+        if (cached is not null && cached.EnvHandle.Value == handle.Value)
+            return cached;
+        return _threadCached = new JNIEnv(handle);
+    }
+
     public JNIEnv(_JNIEnv jniEnvHandle)
     {
         EnvHandle = jniEnvHandle;
@@ -61,6 +75,10 @@ public unsafe class JNIEnv : IDisposable
         GC.SuppressFinalize(this);
     }
     
+    public bool IsInstanceOf(_JObject obj, _JClass cls) => Functions.IsInstanceOf(EnvHandle, obj, cls) != 0;
+
+    public _JClass GetObjectClass(_JObject obj) => new(Functions.GetObjectClass(EnvHandle, obj));
+
     public _JClass FindClass(string name)
     {
         var res = Functions.FindClass(EnvHandle, name);

@@ -415,6 +415,9 @@ public unsafe struct JNINativeInterface_
     [UnmanagedFunctionPointer(CallingConvention.Winapi), JNIFunctionBinding(nameof(JNINativeInterface.IsSameObject))]
     public delegate byte IsSameObject(IntPtr EnvironmentHandle, IntPtr o1, IntPtr o2);
 
+    [UnmanagedFunctionPointer(CallingConvention.Winapi), JNIFunctionBinding(nameof(JNINativeInterface.IsInstanceOf))]
+    public delegate byte IsInstanceOf(IntPtr EnvironmentHandle, IntPtr obj, IntPtr jniClass);
+
     [UnmanagedFunctionPointer(CallingConvention.Winapi), JNIFunctionBinding(nameof(JNINativeInterface.MonitorEnter))]
     public delegate int MonitorEnter(IntPtr EnvironmentHandle, IntPtr obj);
 

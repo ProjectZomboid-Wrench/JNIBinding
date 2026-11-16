@@ -95,7 +95,7 @@ public sealed unsafe class JVM
         var res = (JniResult)Functions.GetEnv(Handle, out var pEnv, (int)version);
         return res switch
         {
-            JniResult.Success => new JNIEnv(new _JNIEnv(pEnv)),
+            JniResult.Success => JNIEnv.ForHandle(new _JNIEnv(pEnv)),
             JniResult.ThreadDetached => null,
             _ => throw new JNIException($"GetEnv failed: {res}"),
         };
@@ -109,11 +109,12 @@ public sealed unsafe class JVM
             : Functions.AttachCurrentThread(Handle, out pEnv, null));
         if (res != JniResult.Success)
             throw new JNIException($"AttachCurrentThread failed: {res}");
-        return new JNIEnv(new _JNIEnv(pEnv));
+        return JNIEnv.ForHandle(new _JNIEnv(pEnv));
     }
 
-    public JNIEnv GetOrAttachEnv(JniVersion version = JniVersion.JNI_VERSION_1_6)
-        => GetEnv(version) ?? AttachCurrentThread();
+    /// <param name="asDaemon">Attach as a daemon thread so it doesn't keep the JVM alive; use for .NET-owned threads.</param>
+    public JNIEnv GetOrAttachEnv(JniVersion version = JniVersion.JNI_VERSION_1_6, bool asDaemon = false)
+        => GetEnv(version) ?? AttachCurrentThread(asDaemon);
 
     public void DetachCurrentThread()
     {

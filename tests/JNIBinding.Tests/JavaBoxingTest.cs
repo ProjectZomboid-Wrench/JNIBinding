@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 using JNIBinding.Bindings.Native.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -24,6 +25,17 @@ public unsafe class JavaBoxingTest
         AssertUnboxes((sbyte)-3, Box("java/lang/Byte", "(B)Ljava/lang/Byte;", new _JValue(unchecked((byte)-3))));
         AssertUnboxes('x', Box("java/lang/Character", "(C)Ljava/lang/Character;", new _JValue((ushort)'x')));
         AssertUnboxes(true, Box("java/lang/Boolean", "(Z)Ljava/lang/Boolean;", new _JValue(_JBoolean.True)));
+    }
+
+    [TestMethod]
+    public void Box_Round_Trips_Through_TryUnbox()
+    {
+        object[] values = ["text", true, (sbyte)-3, 'x', (short)7, 42, 42L, 2.5f, 1.5d];
+        foreach (var expected in values)
+            AssertUnboxes(expected, JavaBoxing.Box(Env, expected));
+
+        Assert.IsTrue(JavaBoxing.Box(Env, null).IsNull);
+        Assert.ThrowsExactly<ArgumentException>(() => JavaBoxing.Box(Env, new object()));
     }
 
     [TestMethod]

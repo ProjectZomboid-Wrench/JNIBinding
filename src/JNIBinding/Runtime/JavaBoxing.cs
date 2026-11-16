@@ -3,7 +3,7 @@ using JNIBinding.Bindings.Native.Types;
 namespace JNIBinding;
 
 /// <summary>
-/// Converts Java strings and boxed primitives to .NET values. Class refs and method ids are cached as global refs
+/// Converts between Java strings/boxed primitives and .NET values. Class refs and method ids are cached as global refs
 /// on first use and shared by every thread, since a process hosts a single JVM.
 /// </summary>
 public static unsafe class JavaBoxing
@@ -52,6 +52,35 @@ public static unsafe class JavaBoxing
         return true;
     }
 
+    /// <summary>
+    /// Boxes a .NET value as its Java counterpart: string, bool, sbyte/byte (as Byte), char, short, int, long, float
+    /// and double. Returns a new local ref the caller owns; null becomes a null ref.
+    /// </summary>
+    public static _JObject Box(JNIEnv env, object? value)
+    {
+        if (value is null)
+            return _JObject.Null;
+        if (value is string s)
+            return (_JObject)env.AsJString(s);
+
+        var c = Get(env);
+        var (cls, valueOf, arg) = value switch
+        {
+            bool b => (c.Boolean, c.BooleanValueOf, new _JValue(new _JBoolean(b))),
+            sbyte sb => (c.Byte, c.ByteValueOf, new _JValue(unchecked((byte)sb))),
+            byte by => (c.Byte, c.ByteValueOf, new _JValue(by)),
+            char ch => (c.Character, c.CharacterValueOf, new _JValue((ushort)ch)),
+            short sh => (c.Short, c.ShortValueOf, new _JValue(sh)),
+            int i => (c.Integer, c.IntegerValueOf, new _JValue(i)),
+            long l => (c.Long, c.LongValueOf, new _JValue(l)),
+            float f => (c.Float, c.FloatValueOf, new _JValue(f)),
+            double d => (c.Double, c.DoubleValueOf, new _JValue(d)),
+            _ => throw new ArgumentException($"{value.GetType()} has no Java boxed counterpart", nameof(value)),
+        };
+        _JValue* args = stackalloc _JValue[] { arg };
+        return env.CallStaticObjectMethod(cls, valueOf, args);
+    }
+
     /// <summary>The object's Java class name, e.g. <c>java.lang.StringBuilder</c>.</summary>
     public static string GetClassName(JNIEnv env, _JObject obj)
     {
@@ -98,6 +127,8 @@ public static unsafe class JavaBoxing
         public readonly _JClass String, Boolean, Byte, Character, Short, Integer, Long, Float, Double;
         public readonly _JMethodID BooleanValue, ByteValue, CharValue, ShortValue, IntValue, LongValue, FloatValue,
             DoubleValue, GetName, ValueOf;
+        public readonly _JMethodID BooleanValueOf, ByteValueOf, CharacterValueOf, ShortValueOf, IntegerValueOf,
+            LongValueOf, FloatValueOf, DoubleValueOf;
 
         public Cache(JNIEnv env)
         {
@@ -120,6 +151,15 @@ public static unsafe class JavaBoxing
             FloatValue = env.GetMethodId(Float, "floatValue", "()F");
             DoubleValue = env.GetMethodId(Double, "doubleValue", "()D");
             ValueOf = env.GetStaticMethodId(String, "valueOf", "(Ljava/lang/Object;)Ljava/lang/String;");
+
+            BooleanValueOf = env.GetStaticMethodId(Boolean, "valueOf", "(Z)Ljava/lang/Boolean;");
+            ByteValueOf = env.GetStaticMethodId(Byte, "valueOf", "(B)Ljava/lang/Byte;");
+            CharacterValueOf = env.GetStaticMethodId(Character, "valueOf", "(C)Ljava/lang/Character;");
+            ShortValueOf = env.GetStaticMethodId(Short, "valueOf", "(S)Ljava/lang/Short;");
+            IntegerValueOf = env.GetStaticMethodId(Integer, "valueOf", "(I)Ljava/lang/Integer;");
+            LongValueOf = env.GetStaticMethodId(Long, "valueOf", "(J)Ljava/lang/Long;");
+            FloatValueOf = env.GetStaticMethodId(Float, "valueOf", "(F)Ljava/lang/Float;");
+            DoubleValueOf = env.GetStaticMethodId(Double, "valueOf", "(D)Ljava/lang/Double;");
 
             var classClass = env.FindClass("java/lang/Class");
             GetName = env.GetMethodId(classClass, "getName", "()Ljava/lang/String;");

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>JNIBinding.Tests</RootNamespace>
+
+    <IsPackable>false</IsPackable>
+
+    <LangVersion>preview</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Javac Condition="'$(JAVA_HOME)' != ''">$(JAVA_HOME)/bin/javac</Javac>
+    <Javac Condition="'$(JAVA_HOME)' == ''">javac</Javac>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\JNIBinding\JNIBinding.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <JavaSource Include="java/**/*.java" />
+  </ItemGroup>
+
+  <Target Name="CompileJavaFixtures" AfterTargets="Build" Inputs="@(JavaSource)" Outputs="$(OutDir)classes/.stamp">
+    <MakeDir Directories="$(OutDir)classes" />
+    <Exec Command="&quot;$(Javac)&quot; --release 17 -d &quot;$(OutDir)classes&quot; @(JavaSource->'&quot;%(FullPath)&quot;', ' ')" />
+    <Touch Files="$(OutDir)classes/.stamp" AlwaysCreate="true" />
+  </Target>
+
+</Project>

@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using JNIBinding.Bindings;
 using JNIBinding.Bindings.Native;
 using JNIBinding.Bindings.Native.Interop;
 using JNIBinding.Bindings.Native.Types;
 using JNIBinding.Exceptions;
+using JNIBinding.Diagnostics;
 
 namespace JNIBinding;
 
@@ -130,7 +130,7 @@ public sealed unsafe class JVM
 
     public static T Wrap<T>(nint _ptr) where T : Delegate
     {
-        Debug.WriteLine($"[TRACE][JVM] ResolveFunctionPointer: {typeof(T)}(0x{_ptr:x4})");
+        JniLog.Trace("JVM", $"ResolveFunctionPointer: {typeof(T)}(0x{_ptr:x4})");
         T res = null!;
         GetDelegateForFunctionPointer(_ptr, ref res);
         if (res == null)

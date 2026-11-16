@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using JNIBinding.Bindings.Native;
+using JNIBinding.Diagnostics;
 
 namespace JNIBinding.Bindings;
 
@@ -57,7 +57,7 @@ public sealed unsafe class JvmLibrary : IVMRef
             NativeLibrary.GetExport(handle, "JNI_GetDefaultJavaVMInitArgs");
 
         LoadedFrom = source;
-        Debug.WriteLine($"[TRACE][JvmLibrary] - Loaded {VMLibraryName} from {source}");
+        JniLog.Debug("JvmLibrary", $"Loaded {VMLibraryName} from {source}");
     }
 
     public JniResult CreateVM(out IntPtr pVM, out IntPtr pEnv, JvmInitArgs* args)

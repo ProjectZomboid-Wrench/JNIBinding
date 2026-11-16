@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using JNIBinding.Bindings.Native;
+using JNIBinding.Diagnostics;
 
 namespace JNIBinding;
 
@@ -9,7 +10,7 @@ public static class JNIFunctionBinder
     public static void Bind(JNIInvokeBridge bindingTarget, JNIInvokeInterface pointerContainer)
     {
         var sw = new Stopwatch();
-        Debug.WriteLine($"[Trace][JNIFunctionBinder] - Binding {bindingTarget} with {pointerContainer}");
+        JniLog.Trace("JNIFunctionBinder", $"Binding {bindingTarget} with {pointerContainer}");
 
         var bindingTargetType = bindingTarget.GetType();
         var bindingTargetRef = bindingTargetType.GetField(nameof(JNIInvokeBridge._binding));
@@ -23,13 +24,12 @@ public static class JNIFunctionBinder
         var wrapFunc = typeof(JVM).GetMethod(nameof(JVM.Wrap));
         foreach (var (binding, bindingProperty) in bindingProperties)
         {
-            Debug.WriteLine(
-                $"[Trace][JNIFunctionBinder] - Binding {bindingTarget}.{binding.Target} to {pointerContainer}.{bindingProperty.Name}");
+            JniLog.Trace("JNIFunctionBinder", $"Binding {bindingTarget}.{binding.Target} to {pointerContainer}.{bindingProperty.Name}");
 
             // Convert a given nint/IntPtr function pointer to a wrapped Delegate via JEnv.Wrap<T>()
             object? fpToDelegate(Type t, IntPtr fp)
             {
-                Debug.WriteLine($"[Trace][JNIFunctionBinder] - Wrapping delegate* [{fp}] of {t.Name}");
+                JniLog.Trace("JNIFunctionBinder", $"Wrapping delegate* [{fp}] of {t.Name}");
                 return wrapFunc.MakeGenericMethod(t).Invoke(null, [fp]);
             }
 
@@ -37,7 +37,7 @@ public static class JNIFunctionBinder
             // bindingSource
             void SetBridgeFunc(object ptr, IntPtr val)
             {
-                Debug.WriteLine($"[Trace][JNIFunctionBinder] - Setting {ptr}.{bindingProperty.Name} to {functionPointers.Name}.{binding.Target} [{val}]");
+                JniLog.Trace("JNIFunctionBinder", $"Setting {ptr}.{bindingProperty.Name} to {functionPointers.Name}.{binding.Target} [{val}]");
                 bindingProperty.SetValue(ptr, fpToDelegate(bindingProperty.PropertyType, val));
             }
 
@@ -61,12 +61,11 @@ public static class JNIFunctionBinder
 
             // Finally go set the property
             SetBridgeFunc(bindingTarget, functionPointer);
-            Debug.WriteLine($"[Trace][JNIFunctionBinder] - Bound {bindingTarget}.{binding.Target} to {functionPointer:x8})");
+            JniLog.Trace("JNIFunctionBinder", $"Bound {bindingTarget}.{binding.Target} to {functionPointer:x8})");
         }
 
         sw.Stop();
-        Debug.WriteLine(
-            $"[Trace][JNIFunctionBinder] - Bound {bindingProperties.Count()} function pointers in {sw.Elapsed:g}");
+        JniLog.Trace("JNIFunctionBinder", $"Bound {bindingProperties.Count()} function pointers in {sw.Elapsed:g}");
     } 
     
     // TODO: Probably replace this with codegen'ed automatic binding, same attribute just do it at compile time
@@ -74,7 +73,7 @@ public static class JNIFunctionBinder
     {
         var sw = new Stopwatch();
         sw.Start();
-        Debug.WriteLine($"[Trace][JNIFunctionBinder] - Binding {bindingTarget} with {pointerContainer}");
+        JniLog.Trace("JNIFunctionBinder", $"Binding {bindingTarget} with {pointerContainer}");
 
         var bindingTargetType = bindingTarget.GetType();
         var bindingTargetRef = bindingTargetType.GetField(nameof(JNIFunctionBridge._binding));
@@ -88,13 +87,12 @@ public static class JNIFunctionBinder
         var wrapFunc = typeof(JNIEnv).GetMethod(nameof(JNIEnv.Wrap));
         foreach (var (binding, bindingProperty) in bindingProperties)
         {
-            Debug.WriteLine(
-                $"[Trace][JNIFunctionBinder] - Binding {bindingTarget}.{binding.Target} to {pointerContainer}.{bindingProperty.Name}");
+            JniLog.Trace("JNIFunctionBinder", $"Binding {bindingTarget}.{binding.Target} to {pointerContainer}.{bindingProperty.Name}");
 
             // Convert a given nint/IntPtr function pointer to a wrapped Delegate via JEnv.Wrap<T>()
             object? fpToDelegate(Type t, IntPtr fp)
             {
-                Debug.WriteLine($"[Trace][JNIFunctionBinder] - Wrapping delegate* [{fp}] of {t.Name}");
+                JniLog.Trace("JNIFunctionBinder", $"Wrapping delegate* [{fp}] of {t.Name}");
                 return wrapFunc.MakeGenericMethod(t).Invoke(null, [fp]);
             }
 
@@ -102,7 +100,7 @@ public static class JNIFunctionBinder
             // bindingSource
             void SetBridgeFunc(object ptr, IntPtr val)
             {
-                Debug.WriteLine($"[Trace][JNIFunctionBinder] - Setting {ptr}.{bindingProperty.Name} to {functionPointers.Name}.{binding.Target} [{val}]");
+                JniLog.Trace("JNIFunctionBinder", $"Setting {ptr}.{bindingProperty.Name} to {functionPointers.Name}.{binding.Target} [{val}]");
                 bindingProperty.SetValue(ptr, fpToDelegate(bindingProperty.PropertyType, val));
             }
 
@@ -126,11 +124,10 @@ public static class JNIFunctionBinder
 
             // Finally go set the property
             SetBridgeFunc(bindingTarget, functionPointer);
-            Debug.WriteLine($"[Trace][JNIFunctionBinder] - Bound {bindingTarget}.{binding.Target} to {functionPointer:x8})");
+            JniLog.Trace("JNIFunctionBinder", $"Bound {bindingTarget}.{binding.Target} to {functionPointer:x8})");
         }
 
         sw.Stop();
-        Debug.WriteLine(
-            $"[Trace][JNIFunctionBinder] - Bound {bindingProperties.Count()} function pointers in {sw.Elapsed:g}");
+        JniLog.Trace("JNIFunctionBinder", $"Bound {bindingProperties.Count()} function pointers in {sw.Elapsed:g}");
     }
 }

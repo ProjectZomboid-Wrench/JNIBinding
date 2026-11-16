@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Runtime.InteropServices;
 using JNIBinding.Bindings.Native;
 using JNIBinding.Bindings.Native.Types;
 using JNIBinding.Exceptions;
+using JNIBinding.Diagnostics;
 
 namespace JNIBinding;
 
@@ -475,7 +475,7 @@ public unsafe class JNIEnv : IDisposable
     /// <exception cref="ArgumentException"></exception>
     public static T Wrap<T>(nint _ptr) where T: Delegate
     {
-        Debug.WriteLine($"[TRACE][JEnv] ResolveFunctionPointer: {typeof(T)}(0x{_ptr:x4})");
+        JniLog.Trace("JEnv", $"ResolveFunctionPointer: {typeof(T)}(0x{_ptr:x4})");
         T res = null!;
         JVM.GetDelegateForFunctionPointer(_ptr, ref res);
         if (res == null)

@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using JNIBinding.Diagnostics;
 
 namespace JNIBinding;
 
@@ -12,7 +12,7 @@ public static class StringHelper
     {
         // TODO: Track any unmanaged string pointers and free them when no longer wanted
         var ptr = Marshal.StringToHGlobalAnsi(s);
-        Debug.Write($"{nameof(TrackString)}:: Tracking unmanaged string('{s}') @ {ptr:X16}");
+        JniLog.Trace(nameof(StringHelper), $"Tracking unmanaged string('{s}') @ {ptr:X16}");
         
         return ptr;
     }

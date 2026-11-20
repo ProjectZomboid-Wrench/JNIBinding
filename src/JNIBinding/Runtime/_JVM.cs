@@ -39,7 +39,6 @@ public sealed unsafe class JVM
         Handle = handle;
         var table = (*(JNIInvokeInterfacePtr*)handle.ToPointer()).functions;
         Functions = new JNIInvokeBridge(*table);
-        JNIFunctionBinder.Bind(Functions, *table);
     }
 
     /// <summary>Creates the process's JVM. The calling thread is attached to it.</summary>
@@ -92,7 +91,8 @@ public sealed unsafe class JVM
     /// <summary>Returns the calling thread's JNIEnv, or null if the thread isn't attached.</summary>
     public JNIEnv? GetEnv(JniVersion version = JniVersion.JNI_VERSION_1_6)
     {
-        var res = (JniResult)Functions.GetEnv(Handle, out var pEnv, (int)version);
+        IntPtr pEnv;
+        var res = (JniResult)Functions.GetEnv(Handle, &pEnv, (int)version);
         return res switch
         {
             JniResult.Success => JNIEnv.ForHandle(new _JNIEnv(pEnv)),
@@ -105,8 +105,8 @@ public sealed unsafe class JVM
     {
         IntPtr pEnv;
         var res = (JniResult)(asDaemon
-            ? Functions.AttachCurrentThreadAsDaemon(Handle, out pEnv, null)
-            : Functions.AttachCurrentThread(Handle, out pEnv, null));
+            ? Functions.AttachCurrentThreadAsDaemon(Handle, &pEnv, null)
+            : Functions.AttachCurrentThread(Handle, &pEnv, null));
         if (res != JniResult.Success)
             throw new JNIException($"AttachCurrentThread failed: {res}");
         return JNIEnv.ForHandle(new _JNIEnv(pEnv));

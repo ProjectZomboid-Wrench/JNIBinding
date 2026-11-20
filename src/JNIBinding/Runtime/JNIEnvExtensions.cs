@@ -9,17 +9,14 @@ public static class JNIEnvExtensions
 {
     public static _JString NewStringAnsi(this JNIEnv env, string text) => AsJString(env, text);
 
+    // UTF-16 both ways: NewStringUTF and GetStringUTFChars use modified UTF-8, which differs for NUL and supplementary characters.
     public static unsafe _JString AsJString(this JNIEnv env, string text)
     {
-        var bytes = Marshal.StringToCoTaskMemUTF8(text);
-        try
-        {
-            return env.NewStringUTF((byte*)bytes);
-        }
-        finally
-        {
-            Marshal.FreeCoTaskMem(bytes);
-        }
+        IntPtr result;
+        fixed (char* chars = text)
+            result = env.Functions.NewString(env.EnvHandle, chars, text.Length);
+        env.CheckJavaExceptionAndThrow();
+        return new _JString(result);
     }
 
     [Obsolete("Use AsString instead")]
@@ -27,20 +24,14 @@ public static class JNIEnvExtensions
 
     public static unsafe string AsString(this JNIEnv env, _JString s)
     {
-        var utf8 = env.AsJString("UTF-8");
-        var clsStr = env.FindClass("java/lang/String");
-        var methodBytes = env.GetMethodId(clsStr, "getBytes", "(Ljava/lang/String;)[B");
-        _JByteArray jbyteArray;
-        fixed (_JValue* pargs = new[] { new _JValue(utf8) })
-            jbyteArray = env.CallObjectMethodA((_JObject)s, methodBytes, pargs).AsByteArray();
-        env.DeleteLocalRef((_JObject)utf8);
-        var len = env.GetArrayLength(jbyteArray);
-        byte[] byteArray = new byte[len];
-        fixed (byte* b = byteArray)
-            env.GetByteArrayRegion(jbyteArray, 0, len, b);
-        env.SurfaceException();
-
-        return Encoding.UTF8.GetString(byteArray);
+        if (s.IsNull)
+            throw new ArgumentNullException(nameof(s));
+        var length = env.Functions.GetStringLength(env.EnvHandle, s.Value);
+        return string.Create(length, (env, s), static (span, state) =>
+        {
+            fixed (char* chars = span)
+                state.env.Functions.GetStringRegion(state.env.EnvHandle, state.s.Value, 0, span.Length, chars);
+        });
     }
 
     public static void SurfaceException(this JNIEnv env)
@@ -100,7 +91,7 @@ public static class JNIEnvExtensions
         return Encoding.UTF8.GetString(bytes);
     }
 
-    private static bool ClearIfPending(JNIEnv env)
+    private static unsafe bool ClearIfPending(JNIEnv env)
     {
         if (env.Functions.ExceptionCheck(env.EnvHandle) == 0)
             return false;

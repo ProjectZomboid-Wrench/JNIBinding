@@ -17,6 +17,8 @@ public unsafe class JavaBoxingTest
     public void TryUnbox_Converts_Strings_And_Boxed_Primitives()
     {
         AssertUnboxes("héllo", (_JObject)Env.AsJString("héllo"));
+        AssertUnboxes("nul\0 and \U0001F600", (_JObject)Env.AsJString("nul\0 and \U0001F600"));
+        AssertUnboxes("", (_JObject)Env.AsJString(""));
         AssertUnboxes(1.5d, Box("java/lang/Double", "(D)Ljava/lang/Double;", new _JValue(1.5d)));
         AssertUnboxes(2.5f, Box("java/lang/Float", "(F)Ljava/lang/Float;", new _JValue(2.5f)));
         AssertUnboxes(42, Box("java/lang/Integer", "(I)Ljava/lang/Integer;", new _JValue(42)));

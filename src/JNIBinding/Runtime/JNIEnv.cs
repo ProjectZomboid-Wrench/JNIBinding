@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using JNIBinding.Bindings.Native;
 using JNIBinding.Bindings.Native.Types;
 using JNIBinding.Exceptions;
@@ -44,7 +45,7 @@ public unsafe class JNIEnv : IDisposable
 
     /// <summary>
     /// Returns a wrapper for a handle obtained on the calling thread, reusing the previous one when the handle is
-    /// unchanged. Prefer this to the constructor, which binds every JNI function and is expensive.
+    /// unchanged, so native callbacks don't allocate a wrapper and function table per call.
     /// </summary>
     public static JNIEnv ForHandle(_JNIEnv handle)
     {
@@ -58,10 +59,15 @@ public unsafe class JNIEnv : IDisposable
     {
         EnvHandle = jniEnvHandle;
         FuncHandle = (*(JNINativeInterfacePtr*)jniEnvHandle.ToPointer()).functions;
-        
-        // Bind all known delegates to their function pointers
         Functions = new JNIFunctionBridge(*FuncHandle);
-        JNIFunctionBinder.Bind(Functions, *FuncHandle);
+    }
+
+    // Names and signatures have no NULs or supplementary characters, where modified UTF-8 differs from UTF-8.
+    private static byte[] CString(string text)
+    {
+        var bytes = new byte[Encoding.UTF8.GetByteCount(text) + 1];
+        Encoding.UTF8.GetBytes(text, bytes);
+        return bytes;
     }
 
     public int GetVersion()
@@ -85,7 +91,9 @@ public unsafe class JNIEnv : IDisposable
 
     public _JClass FindClass(string name)
     {
-        var res = Functions.FindClass(EnvHandle, name);
+        IntPtr res;
+        fixed (byte* cName = CString(name))
+            res = Functions.FindClass(EnvHandle, cName);
         CheckJavaExceptionAndThrow();
         return new _JClass(res);
     }
@@ -95,6 +103,13 @@ public unsafe class JNIEnv : IDisposable
         IntPtr res = Functions.NewObjectArray(EnvHandle, len, clazz, initValue);
         CheckJavaExceptionAndThrow();
         return new _JObjectArray(res);
+    }
+
+    public _JObject AllocObject(_JClass cls)
+    {
+        IntPtr res = Functions.AllocObject(EnvHandle, cls);
+        CheckJavaExceptionAndThrow();
+        return new _JObject(res);
     }
 
     public _JObject NewObjectA(_JClass clsHnd, _JMethodID methodId, _JValue* args)
@@ -117,14 +132,18 @@ public unsafe class JNIEnv : IDisposable
 
     public _JMethodID GetMethodId(_JClass clsPtr, string methodName, string methodSig)
     {
-        var res = Functions.GetMethodID(EnvHandle, clsPtr, methodName, methodSig);
+        IntPtr res;
+        fixed (byte* cName = CString(methodName), cSig = CString(methodSig))
+            res = Functions.GetMethodID(EnvHandle, clsPtr, cName, cSig);
         CheckJavaExceptionAndThrow();
         return new _JMethodID(res);
     }
 
     public _JMethodID GetStaticMethodId(_JClass clsPtr, string methodName, string methodSig)
     {
-        var res = Functions.GetStaticMethodID(EnvHandle, clsPtr, methodName, methodSig);
+        IntPtr res;
+        fixed (byte* cName = CString(methodName), cSig = CString(methodSig))
+            res = Functions.GetStaticMethodID(EnvHandle, clsPtr, cName, cSig);
         CheckJavaExceptionAndThrow();
         return new _JMethodID(res);
     }
@@ -324,12 +343,14 @@ public unsafe class JNIEnv : IDisposable
 
     public _JFieldID GetFieldID(_JClass clsHnd, string name, string signature)
     {
-        return Functions.GetFieldID(EnvHandle, clsHnd, name, signature);
+        fixed (byte* cName = CString(name), cSig = CString(signature))
+            return Functions.GetFieldID(EnvHandle, clsHnd, cName, cSig);
     }
 
     public _JFieldID GetStaticFieldID(_JClass classHnd, string name, string signature)
     {
-        return Functions.GetStaticFieldID(EnvHandle, classHnd, name, signature);
+        fixed (byte* cName = CString(name), cSig = CString(signature))
+            return Functions.GetStaticFieldID(EnvHandle, classHnd, cName, cSig);
     }
 
     public int ThrowNew(_JClass classHnd, byte* msg)

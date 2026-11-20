@@ -12,7 +12,7 @@ Console.WriteLine($"Fetched ref: {clsPtr}");
 var objArrayPtr = jEnv.NewObjectArray(1, clsPtr, _JObject.Null);
 Console.WriteLine($"Created array: {objArrayPtr}");
 
-var jobjInst = new _JObject(jEnv.Functions.AllocObject(jEnv, clsPtr));
+var jobjInst = jEnv.AllocObject(clsPtr);
 Console.WriteLine($"Alloc'ed {jobjInst}");
 
 jEnv.SetObjectArrayElement(objArrayPtr, 0, jobjInst);
